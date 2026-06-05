@@ -1,0 +1,5 @@
+{
+  "name": "Rent Flow",
+  "description": "A rental management system for house owners to track tenants, payments, and due dates.",
+  "requestFramePermissions": []
+}

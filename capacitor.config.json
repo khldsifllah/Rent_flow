@@ -1,0 +1,12 @@
+{
+  "appId": "com.rentflow.app",
+  "appName": "Rent Flow",
+  "webDir": "dist",
+  "plugins": {
+    "StatusBar": {
+      "style": "LIGHT",
+      "backgroundColor": "#ffffff",
+      "overlaysWebView": false
+    }
+  }
+}
