@@ -33,6 +33,7 @@ export default function AddPaymentModal({ isOpen, onClose, onSuccess, preselecte
   const [showSlipDialog, setShowSlipDialog] = useState(false);
   const [slipData, setSlipData] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [unpaidPrevMonth, setUnpaidPrevMonth] = useState<{ month: string; year: string; due: number } | null>(null);
 
   const showError = (msg: string) => {
     setErrorMsg(msg);
@@ -66,6 +67,7 @@ export default function AddPaymentModal({ isOpen, onClose, onSuccess, preselecte
         setSelectedTenant(null);
         setDueAmount(0);
         setPaidThisMonth(0);
+        setUnpaidPrevMonth(null);
         return;
       }
 
@@ -75,6 +77,59 @@ export default function AddPaymentModal({ isOpen, onClose, onSuccess, preselecte
       if (tenant) {
         const allPayments = await getPayments();
         const existingPayments = allPayments.filter(p => p.tenant_id === tId);
+
+        // Check for unpaid previous months
+        if (tenant.joining_date) {
+          const joinDate = new Date(tenant.joining_date);
+          const joinYear = joinDate.getFullYear();
+          const joinMonth = joinDate.getMonth(); // 0-11
+
+          const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          const targetMonthIdx = monthNames.indexOf(paymentMonth);
+          const targetYearNum = Number(paymentYear);
+
+          if (targetMonthIdx !== -1 && !isNaN(targetYearNum)) {
+            let currentYear = joinYear;
+            let currentMonthIdx = joinMonth;
+            let foundUnpaid: { month: string; year: string; due: number } | null = null;
+
+            while (
+              currentYear < targetYearNum || 
+              (currentYear === targetYearNum && currentMonthIdx < targetMonthIdx)
+            ) {
+              const checkMonthStr = monthNames[currentMonthIdx];
+              const checkYearStr = currentYear.toString();
+
+              const paymentsForCheckMonth = existingPayments.filter(
+                p => p.month === checkMonthStr && p.year === checkYearStr
+              );
+              const totalPaidForCheckMonth = paymentsForCheckMonth.reduce((sum, p) => sum + p.amount, 0);
+              const dueForCheckMonth = tenant.monthly_rent - totalPaidForCheckMonth;
+
+              if (dueForCheckMonth > 0.1) {
+                foundUnpaid = {
+                  month: checkMonthStr,
+                  year: checkYearStr,
+                  due: dueForCheckMonth
+                };
+                break;
+              }
+
+              // increment month
+              currentMonthIdx++;
+              if (currentMonthIdx > 11) {
+                currentMonthIdx = 0;
+                currentYear++;
+              }
+            }
+            setUnpaidPrevMonth(foundUnpaid);
+          } else {
+            setUnpaidPrevMonth(null);
+          }
+        } else {
+          setUnpaidPrevMonth(null);
+        }
+
         const paymentsThisMonth = existingPayments.filter(p => p.month === paymentMonth && p.year === paymentYear);
         const totalPaid = paymentsThisMonth.reduce((sum, p) => sum + p.amount, 0);
         
@@ -99,6 +154,11 @@ export default function AddPaymentModal({ isOpen, onClose, onSuccess, preselecte
   const handleAddPayment = async (e: FormEvent) => {
     e.preventDefault();
     if (!selectedTenantId || !paymentAmount || !paymentMonth || !paymentYear) return;
+
+    if (unpaidPrevMonth) {
+      showError(`আগের বকেয়া পরিশোধ করুন: ${unpaidPrevMonth.month} ${unpaidPrevMonth.year} মাসের বকেয়া ৳${unpaidPrevMonth.due} এখনও পরিশোধ করা হয়নি।`);
+      return;
+    }
 
     const amountToPay = Number(paymentAmount);
     if (amountToPay <= 0) {
@@ -328,6 +388,15 @@ export default function AddPaymentModal({ isOpen, onClose, onSuccess, preselecte
                   </div>
                 )}
 
+                {unpaidPrevMonth && (
+                  <div className="bg-m3-error-container text-m3-on-error-container rounded-2xl p-4 text-xs font-bold space-y-2 border border-m3-error/20">
+                    <p className="text-sm flex items-center gap-1">⚠️ বকেয়া ব্লোকড!</p>
+                    <p className="leading-relaxed">
+                      এই ভাড়াটিয়ার পূর্ববর্তী <strong>{unpaidPrevMonth.month} {unpaidPrevMonth.year}</strong> মাসের <strong>৳{unpaidPrevMonth.due}</strong> বকেয়া ভাড়া পরিশোধ করা হয়নি। আগে সেটি পরিশোধ করুন।
+                    </p>
+                  </div>
+                )}
+
                 {/* Amount Paid */}
                 <div>
                   <label className="block text-xs font-bold text-m3-on-surface-variant mb-1 uppercase tracking-wider">Amount Paid *</label>
@@ -335,19 +404,20 @@ export default function AddPaymentModal({ isOpen, onClose, onSuccess, preselecte
                     required 
                     type="number" 
                     step="0.01" 
-                    placeholder="Enter collected amount"
+                    placeholder={unpaidPrevMonth ? "আগের বকেয়া পরিশোধ করুন" : "Enter collected amount"}
                     value={paymentAmount} 
                     onChange={e => setPaymentAmount(e.target.value)} 
-                    className="w-full bg-m3-surface-variant text-m3-on-surface rounded-xl p-3 text-sm border-none focus:ring-2 focus:ring-m3-primary outline-none" 
+                    disabled={!!unpaidPrevMonth}
+                    className="w-full bg-m3-surface-variant text-m3-on-surface rounded-xl p-3 text-sm border-none focus:ring-2 focus:ring-m3-primary outline-none disabled:opacity-40 disabled:cursor-not-allowed" 
                   />
                 </div>
 
                 <button 
                   type="submit" 
-                  disabled={!selectedTenantId || dueAmount <= 0}
+                  disabled={!selectedTenantId || dueAmount <= 0 || !!unpaidPrevMonth}
                   className="w-full bg-m3-success text-m3-on-success disabled:opacity-50 disabled:cursor-not-allowed font-bold rounded-full p-4 mt-4 hover:bg-opacity-90 transition-colors cursor-pointer text-center uppercase tracking-wider text-sm shadow-md"
                 >
-                  {dueAmount <= 0 ? 'Fully Paid' : 'Mark as Paid'}
+                  {unpaidPrevMonth ? 'আগের বকেয়া পরিশোধ করুন' : (dueAmount <= 0 ? 'Fully Paid' : 'Mark as Paid')}
                 </button>
               </form>
             )}
