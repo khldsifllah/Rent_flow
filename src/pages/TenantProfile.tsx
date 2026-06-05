@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase, type Tenant, type Payment } from '../supabase';
 import { getTenantById, getPaymentsByTenantId, getSlipsByTenantId } from '../dataService';
-import { ArrowLeft, User, ReceiptText, ChevronDown } from 'lucide-react';
+import { ArrowLeft, User, ReceiptText, ChevronDown, Banknote, Plus } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import SlipDialog from '../components/SlipDialog';
+import AddPaymentModal from '../components/AddPaymentModal';
 import { useAuth } from '../AuthContext';
 
 export default function TenantProfile() {
@@ -17,45 +18,46 @@ export default function TenantProfile() {
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [expandedMonths, setExpandedMonths] = useState<Record<string, boolean>>({});
   const [landlordRealName, setLandlordRealName] = useState('Landlord');
+  const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchTenantData() {
-      if (!tenantId) return;
+  async function fetchTenantData() {
+    if (!tenantId) return;
 
-      const tenant = await getTenantById(tenantId);
-      if (!tenant) {
-        setData(null);
-        return;
-      }
-
-      // Query landlord's real name from 'users' table
-      let lName = user?.name || 'Owner';
-      if (tenant.user_id) {
-        try {
-          const { data: userData } = await supabase
-            .from('users')
-            .select('name')
-            .eq('id', tenant.user_id)
-            .single();
-          if (userData && userData.name) {
-            lName = userData.name;
-          }
-        } catch (err) {
-          console.warn("Failed to fetch landlord name from users table:", err);
-        }
-      }
-      setLandlordRealName(lName);
-
-      const paymentsData = await getPaymentsByTenantId(tenantId);
-      const payments = (paymentsData || []).sort((a, b) => b.payment_date - a.payment_date);
-
-      const slipsData = await getSlipsByTenantId(tenantId);
-
-      const totalPaid = (payments || []).reduce((sum: number, p: Payment) => sum + p.amount, 0);
-
-      setData({ tenant, payments: payments || [], totalPaid, slips: slipsData || [] });
+    const tenant = await getTenantById(tenantId);
+    if (!tenant) {
+      setData(null);
+      return;
     }
 
+    // Query landlord's real name from 'users' table
+    let lName = user?.name || 'Owner';
+    if (tenant.user_id) {
+      try {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', tenant.user_id)
+          .single();
+        if (userData && userData.name) {
+          lName = userData.name;
+        }
+      } catch (err) {
+        console.warn("Failed to fetch landlord name from users table:", err);
+      }
+    }
+    setLandlordRealName(lName);
+
+    const paymentsData = await getPaymentsByTenantId(tenantId);
+    const payments = (paymentsData || []).sort((a, b) => b.payment_date - a.payment_date);
+
+    const slipsData = await getSlipsByTenantId(tenantId);
+
+    const totalPaid = (payments || []).reduce((sum: number, p: Payment) => sum + p.amount, 0);
+
+    setData({ tenant, payments: payments || [], totalPaid, slips: slipsData || [] });
+  }
+
+  useEffect(() => {
     fetchTenantData();
   }, [tenantId]);
 
@@ -149,6 +151,14 @@ export default function TenantProfile() {
               <span className="text-sm font-bold text-right">{format(new Date(payments[0].payment_date), 'MMM dd, yyyy')}</span>
             </div>
           )}
+          
+          <button
+            onClick={() => setIsAddPaymentOpen(true)}
+            className="w-full mt-4 bg-m3-primary text-m3-on-primary hover:bg-opacity-90 active:scale-[0.98] font-bold rounded-full py-3.5 px-4 flex items-center justify-center gap-2 hover:scale-[1.01] transition-all shadow-md text-sm uppercase tracking-wider cursor-pointer"
+          >
+            <Banknote className="w-5 h-5" />
+            <span>Record Payment</span>
+          </button>
         </div>
       </div>
 
@@ -228,6 +238,13 @@ export default function TenantProfile() {
         slipData={selectedSlip} 
         isOpen={!!selectedSlip} 
         onClose={() => setSelectedSlip(null)} 
+      />
+
+      <AddPaymentModal
+        isOpen={isAddPaymentOpen}
+        onClose={() => setIsAddPaymentOpen(false)}
+        onSuccess={() => fetchTenantData()}
+        preselectedTenantId={tenantId}
       />
     </div>
   );

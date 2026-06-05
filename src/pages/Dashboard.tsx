@@ -8,6 +8,8 @@ import { Plus, CreditCard, List, X, User, Wallet, LogOut, Mail, Star, Info, Pale
 import ProfileModal from '../components/ProfileModal';
 import ThemeModal from '../components/ThemeModal';
 import LogoutConfirmModal from '../components/LogoutConfirmModal';
+import AddPaymentModal from '../components/AddPaymentModal';
+import AddTenantModal from '../components/AddTenantModal';
 
 export default function Dashboard() {
   const { user, isGuest, signOut } = useAuth();
@@ -27,6 +29,11 @@ export default function Dashboard() {
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
+  const [isAddTenantOpen, setIsAddTenantOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
 
   const [stats, setStats] = useState<{
     activeCount: number;
@@ -109,7 +116,7 @@ export default function Dashboard() {
     }
 
     fetchStats();
-  }, [selectedMonth, qMonth, qYear]);
+  }, [selectedMonth, qMonth, qYear, refreshTrigger]);
 
   if (!stats) return <div className="p-4">Loading...</div>;
 
@@ -235,19 +242,19 @@ export default function Dashboard() {
       <div className="bg-m3-surface border border-m3-surface-variant rounded-3xl p-6 mb-6 shadow-sm">
         <h2 className="text-base font-bold text-m3-on-surface mb-4">Quick Actions</h2>
         <div className="grid grid-cols-4 gap-3">
-          <Link to="/admin" state={{ openAddTenant: true }} className="flex flex-col items-center justify-center p-3 bg-m3-secondary-container text-m3-on-secondary-container rounded-2xl hover:bg-opacity-80 transition-colors">
+          <button onClick={() => setIsAddTenantOpen(true)} className="flex flex-col items-center justify-center p-3 bg-m3-secondary-container text-m3-on-secondary-container rounded-2xl hover:bg-opacity-80 transition-colors cursor-pointer border-none text-left w-full">
             <Plus className="w-6 h-6 mb-2" />
             <span className="text-[11px] font-bold text-center uppercase tracking-wider">Add Tenant</span>
-          </Link>
-          <Link to="/admin" state={{ focusPayment: true }} className="flex flex-col items-center justify-center p-3 bg-m3-secondary-container text-m3-on-secondary-container rounded-2xl hover:bg-opacity-80 transition-colors">
+          </button>
+          <button onClick={() => setIsAddPaymentOpen(true)} className="flex flex-col items-center justify-center p-3 bg-m3-secondary-container text-m3-on-secondary-container rounded-2xl hover:bg-opacity-80 transition-colors cursor-pointer border-none text-left w-full">
             <CreditCard className="w-6 h-6 mb-2" />
             <span className="text-[11px] font-bold text-center uppercase tracking-wider">Add Payment</span>
-          </Link>
-          <button onClick={() => setIsDueListModalOpen(true)} className="flex flex-col items-center justify-center p-3 bg-m3-error-container text-m3-on-error-container rounded-2xl hover:bg-opacity-80 transition-colors">
+          </button>
+          <button onClick={() => setIsDueListModalOpen(true)} className="flex flex-col items-center justify-center p-3 bg-m3-error-container text-m3-on-error-container rounded-2xl hover:bg-opacity-80 transition-colors w-full">
             <List className="w-6 h-6 mb-2" />
             <span className="text-[11px] font-bold text-center uppercase tracking-wider">Due List</span>
           </button>
-          <button onClick={() => setIsPaidListModalOpen(true)} className="flex flex-col items-center justify-center p-3 bg-m3-success-container text-m3-on-success-container rounded-2xl hover:bg-opacity-80 transition-colors">
+          <button onClick={() => setIsPaidListModalOpen(true)} className="flex flex-col items-center justify-center p-3 bg-m3-success-container text-m3-on-success-container rounded-2xl hover:bg-opacity-80 transition-colors w-full">
             <Wallet className="w-6 h-6 mb-2" />
             <span className="text-[11px] font-bold text-center uppercase tracking-wider">Paid List</span>
           </button>
@@ -359,6 +366,18 @@ export default function Dashboard() {
       <ThemeModal isOpen={isThemeModalOpen} onClose={() => setIsThemeModalOpen(false)} />
       
       <LogoutConfirmModal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} />
+
+      <AddPaymentModal 
+        isOpen={isAddPaymentOpen} 
+        onClose={() => setIsAddPaymentOpen(false)} 
+        onSuccess={triggerRefresh} 
+      />
+
+      <AddTenantModal 
+        isOpen={isAddTenantOpen} 
+        onClose={() => setIsAddTenantOpen(false)} 
+        onSuccess={triggerRefresh} 
+      />
 
       {showAbout && (
         <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
