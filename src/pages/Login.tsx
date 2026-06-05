@@ -255,7 +255,7 @@ export default function Login() {
               </div>
 
               {/* OTP Inputs */}
-              <div className="flex justify-between gap-2 sm:gap-3 mb-10 w-full">
+              <div className="grid grid-cols-6 gap-2 sm:gap-3 mb-10 w-full">
                 {otpValues.map((value, index) => (
                   <input
                     key={index}
@@ -266,7 +266,7 @@ export default function Login() {
                     value={value}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    className="w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-bold text-white bg-black/20 border-2 border-white/10 rounded-2xl focus:border-m3-primary focus:outline-none focus:bg-m3-primary/10 transition-all selection:bg-transparent shadow-inner"
+                    className="w-full h-12 sm:h-14 text-center text-xl sm:text-2xl font-bold text-white bg-black/20 border-2 border-white/10 rounded-2xl focus:border-m3-primary focus:outline-none focus:bg-m3-primary/10 transition-all selection:bg-transparent shadow-inner"
                   />
                 ))}
               </div>
