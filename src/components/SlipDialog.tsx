@@ -37,6 +37,24 @@ export default function SlipDialog({ slipData, isOpen, onClose }: { slipData: an
   // State calculations
   const paymentStatus = slipData.paymentStatus || (amountPaid >= monthlyRent ? 'CLEARED' : 'PARTIAL');
 
+  // Memoized floating celebration confetti particles for cleared payments
+  const confettiColors = ['#4F46E5', '#10B981', '#3B82F6', '#F59E0B', '#EC4899', '#8B5CF6'];
+  const confettiParticles = React.useMemo(() => {
+    if (!isOpen || paymentStatus !== 'CLEARED') return [];
+    return Array.from({ length: 35 }).map((_, i) => ({
+      id: i,
+      color: confettiColors[i % confettiColors.length],
+      initialX: Math.random() * 60 - 30,
+      initialY: Math.random() * 40 - 20,
+      targetX: Math.random() * 260 - 130,
+      targetY: Math.random() * -350 - 80,
+      scale: Math.random() * 0.5 + 0.5,
+      rotate: Math.random() * 720,
+      borderRadius: Math.random() > 0.4 ? '2px' : '9999px',
+      delay: Math.random() * 0.3,
+    }));
+  }, [isOpen, paymentStatus]);
+
   // Human-legible date parsing & formatting
   let formattedDatePaid = 'N/A';
   try {
@@ -95,17 +113,24 @@ Receipt generated via Rent Flow.`;
     const element = document.getElementById('slip-content');
     if (!element) return null;
     
-    const scale = window.devicePixelRatio || 2;
+    // Bounds check scale factor to prevent out-of-memory errors on high-DPI screens
+    let scale = window.devicePixelRatio || 2;
+    if (scale > 2.5) scale = 2.5;
+    if (scale < 1.5) scale = 1.5;
     
     const renderedCanvas = await html2canvas(element, {
       scale: scale,
-      useCORS: false,
+      useCORS: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
       logging: false,
+      scrollX: 0,
+      scrollY: -window.scrollY, // Compense for window scroll offset
+      windowWidth: document.documentElement.offsetWidth,
+      windowHeight: document.documentElement.offsetHeight,
       removeContainer: true,
       foreignObjectRendering: false,
-      imageTimeout: 0,
+      imageTimeout: 5000,
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.getElementById('slip-content');
         if (clonedElement) {
@@ -113,6 +138,8 @@ Receipt generated via Rent Flow.`;
           clonedElement.style.overflow = 'visible';
           clonedElement.style.height = 'auto';
           clonedElement.style.transform = 'none';
+          clonedElement.style.padding = '24px';
+          clonedElement.style.borderRadius = '16px';
         }
       }
     });
@@ -287,7 +314,34 @@ Receipt generated via Rent Flow.`;
         
         {/* Scrollable Body container to support full visibility of height-restricted screens */}
         <div id="slip-scroll-container" className="p-4 bg-slate-100/95 dark:bg-zinc-950/70 overflow-y-auto w-full flex-1">
-          <div className="flex items-center justify-center py-2 w-full min-h-min">
+          <div className="flex items-center justify-center py-2 w-full min-h-min relative overflow-hidden">
+            {/* Confetti Celebration Particles */}
+            {paymentStatus === 'CLEARED' && confettiParticles.map((p) => (
+              <motion.div
+                key={p.id}
+                className="absolute z-0 w-2.5 h-2.5 pointer-events-none"
+                style={{
+                  backgroundColor: p.color,
+                  borderRadius: p.borderRadius,
+                  left: '50%',
+                  top: '60%',
+                }}
+                initial={{ opacity: 0, scale: 0, x: p.initialX, y: p.initialY, rotate: 0 }}
+                animate={{
+                  opacity: [0, 1, 1, 0],
+                  scale: [0, p.scale, p.scale, 0],
+                  x: p.targetX,
+                  y: p.targetY,
+                  rotate: p.rotate,
+                }}
+                transition={{
+                  duration: 2.5,
+                  delay: p.delay,
+                  ease: [0.1, 0.8, 0.3, 1],
+                }}
+              />
+            ))}
+
             {/* Slip Render Area - Designed elegantly, avoiding clipping */}
             <div ref={slipRef} id="slip-content" className="bg-white text-slate-800 w-full max-w-[325px] p-5 shadow-2xl border border-slate-100 flex flex-col relative shrink-0 rounded-2xl font-sans" style={{ height: 'auto', overflow: 'visible', maxHeight: 'none' }}>
               {/* Top Color Bar accent */}
