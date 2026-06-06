@@ -4,6 +4,7 @@ import { getTenants, getPayments } from '../dataService';
 import { Link } from 'react-router-dom';
 import { User, ChevronRight } from 'lucide-react';
 import { format, getDate } from 'date-fns';
+import { TenantsSkeleton } from '../components/SkeletonLoader';
 
 type TenantStatus = 'DUE' | 'PENDING' | 'PAID';
 
@@ -52,7 +53,7 @@ export default function Tenants() {
     fetchTenants();
   }, []);
 
-  if (!tenantsWithStatus) return <div className="p-4">Loading...</div>;
+  if (!tenantsWithStatus) return <TenantsSkeleton />;
 
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto">

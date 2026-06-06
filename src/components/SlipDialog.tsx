@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { toJpeg, toBlob } from 'html-to-image';
+import html2canvas from 'html2canvas';
 import { format } from 'date-fns';
 import { X, Download, Share2, ShieldCheck, User, Calendar, Landmark, Ticket } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
@@ -93,9 +94,18 @@ Receipt generated via Rent Flow.`;
 
   const handleDownload = async () => {
     try {
-      if (!slipRef.current) return;
+      const element = document.getElementById('slip-content');
+      if (!element) return;
       
-      const dataUrl = await toJpeg(slipRef.current, { quality: 1.0, pixelRatio: 2 });
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        height: element.scrollHeight,
+        windowHeight: element.scrollHeight,
+        scrollY: 0
+      });
+      const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
       
       if (Capacitor.isNativePlatform()) {
         const base64Data = dataUrl.split(',')[1];
@@ -134,11 +144,21 @@ Receipt generated via Rent Flow.`;
 
   const handleShare = async () => {
     try {
-      if (!slipRef.current) return;
+      const element = document.getElementById('slip-content');
+      if (!element) return;
+      
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        height: element.scrollHeight,
+        windowHeight: element.scrollHeight,
+        scrollY: 0
+      });
+      const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
       
       if (Capacitor.isNativePlatform()) {
         try {
-          const dataUrl = await toJpeg(slipRef.current, { quality: 1.0, pixelRatio: 2 });
           const base64Data = dataUrl.split(',')[1];
           const fileName = `Slip-${slipNumber}.jpg`;
           
@@ -166,7 +186,7 @@ Receipt generated via Rent Flow.`;
         return;
       }
 
-      const blob = await toBlob(slipRef.current, { pixelRatio: 2 });
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.95));
       if (!blob) {
         fallbackToClipboardCopy();
         return;
@@ -241,9 +261,12 @@ Receipt generated via Rent Flow.`;
         </div>
         
         {/* Scrollable Body container to support full visibility of height-restricted screens */}
-        <div className="p-5 bg-slate-100/95 dark:bg-zinc-950/70 overflow-y-auto flex justify-center max-h-[60vh] md:max-h-[70vh]">
+        <div 
+          className="p-5 bg-slate-100/95 dark:bg-zinc-950/70 overflow-y-auto flex justify-center w-full" 
+          style={{ maxHeight: 'calc(100vh - 200px)' }}
+        >
           {/* Slip Render Area - Designed elegantly, avoiding clipping */}
-          <div ref={slipRef} className="bg-white text-slate-800 w-full max-w-[325px] p-5 shadow-2xl border border-slate-100 flex flex-col relative shrink-0 rounded-2xl overflow-hidden font-sans">
+          <div ref={slipRef} id="slip-content" className="bg-white text-slate-800 w-full max-w-[325px] p-5 shadow-2xl border border-slate-100 flex flex-col relative shrink-0 rounded-2xl overflow-hidden font-sans">
             {/* Top Color Bar accent */}
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-700 via-indigo-500 to-emerald-500 z-20" />
 

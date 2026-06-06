@@ -10,6 +10,7 @@ import ThemeModal from '../components/ThemeModal';
 import LogoutConfirmModal from '../components/LogoutConfirmModal';
 import AddPaymentModal from '../components/AddPaymentModal';
 import AddTenantModal from '../components/AddTenantModal';
+import { DashboardSkeleton } from '../components/SkeletonLoader';
 
 export default function Dashboard() {
   const { user, isGuest, signOut } = useAuth();
@@ -118,7 +119,7 @@ export default function Dashboard() {
     fetchStats();
   }, [selectedMonth, qMonth, qYear, refreshTrigger]);
 
-  if (!stats) return <div className="p-4">Loading...</div>;
+  if (!stats) return <DashboardSkeleton />;
 
   const selectedMonthName = format(parse(selectedMonth, 'yyyy-MM', new Date()), 'MMMM yyyy');
   const totalExpected = stats.totalCollected + stats.totalOutstandingDue;
