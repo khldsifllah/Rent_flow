@@ -21,6 +21,28 @@ export default function SlipDialog({ slipData, isOpen, onClose }: { slipData: an
     }
   }, [toast]);
 
+  // Memoized floating celebration confetti particles for cleared payments
+  const confettiColors = ['#4F46E5', '#10B981', '#3B82F6', '#F59E0B', '#EC4899', '#8B5CF6'];
+  const tempMonthlyRent = slipData?.monthlyRent !== undefined ? Number(slipData.monthlyRent) : (Number(slipData?.total_amount) || 0);
+  const tempAmountPaid = slipData?.amountPaid !== undefined ? Number(slipData.amountPaid) : (Number(slipData?.total_amount) || 0);
+  const tempPaymentStatus = slipData?.paymentStatus || (tempAmountPaid >= tempMonthlyRent ? 'CLEARED' : 'PARTIAL');
+
+  const confettiParticles = React.useMemo(() => {
+    if (!isOpen || !slipData || tempPaymentStatus !== 'CLEARED') return [];
+    return Array.from({ length: 35 }).map((_, i) => ({
+      id: i,
+      color: confettiColors[i % confettiColors.length],
+      initialX: Math.random() * 60 - 30,
+      initialY: Math.random() * 40 - 20,
+      targetX: Math.random() * 260 - 130,
+      targetY: Math.random() * -350 - 80,
+      scale: Math.random() * 0.5 + 0.5,
+      rotate: Math.random() * 720,
+      borderRadius: Math.random() > 0.4 ? '2px' : '9999px',
+      delay: Math.random() * 0.3,
+    }));
+  }, [isOpen, slipData, tempPaymentStatus]);
+
   if (!isOpen || !slipData) return null;
 
   // Destructure with fallbacks to fully support old and new payload keys cleanly
@@ -36,24 +58,6 @@ export default function SlipDialog({ slipData, isOpen, onClose }: { slipData: an
 
   // State calculations
   const paymentStatus = slipData.paymentStatus || (amountPaid >= monthlyRent ? 'CLEARED' : 'PARTIAL');
-
-  // Memoized floating celebration confetti particles for cleared payments
-  const confettiColors = ['#4F46E5', '#10B981', '#3B82F6', '#F59E0B', '#EC4899', '#8B5CF6'];
-  const confettiParticles = React.useMemo(() => {
-    if (!isOpen || paymentStatus !== 'CLEARED') return [];
-    return Array.from({ length: 35 }).map((_, i) => ({
-      id: i,
-      color: confettiColors[i % confettiColors.length],
-      initialX: Math.random() * 60 - 30,
-      initialY: Math.random() * 40 - 20,
-      targetX: Math.random() * 260 - 130,
-      targetY: Math.random() * -350 - 80,
-      scale: Math.random() * 0.5 + 0.5,
-      rotate: Math.random() * 720,
-      borderRadius: Math.random() > 0.4 ? '2px' : '9999px',
-      delay: Math.random() * 0.3,
-    }));
-  }, [isOpen, paymentStatus]);
 
   // Human-legible date parsing & formatting
   let formattedDatePaid = 'N/A';
@@ -125,9 +129,7 @@ Receipt generated via Rent Flow.`;
       backgroundColor: '#ffffff',
       logging: false,
       scrollX: 0,
-      scrollY: -window.scrollY, // Compense for window scroll offset
-      windowWidth: document.documentElement.offsetWidth,
-      windowHeight: document.documentElement.offsetHeight,
+      scrollY: 0,
       removeContainer: true,
       foreignObjectRendering: false,
       imageTimeout: 5000,
