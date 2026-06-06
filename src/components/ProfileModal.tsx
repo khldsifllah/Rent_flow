@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Shield, KeyRound, Sparkles, Check } from 'lucide-react';
+import { X, User, Check, AppWindow } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import { supabase } from '../supabase';
 import { compressImage } from '../utils/imageUtils';
@@ -34,10 +34,10 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         setLoading(true);
         const compressedBase64 = await compressImage(file, 200, 200); 
         setPhoto(compressedBase64);
-        setMsg({ text: "✨ Image selected! Save changes to apply.", type: 'success' });
+        setMsg({ text: "ছবি নির্বাচন করা হয়েছে! পরিবর্তনগুলো সংরক্ষণ করতে নিচের বোতামটি চাপুন। (Photo selected! Click save below to apply.)", type: 'success' });
       } catch (err) {
         console.error("Error compressing image", err);
-        setMsg({ text: "Unable to process picture. Try a smaller file.", type: 'error' });
+        setMsg({ text: "ছবিটি বড় হতে পারে। অনুগ্রহ করে ছোট ছবি ব্যবহার করুন। (Failed to process photo. Try a smaller image file.)", type: 'error' });
       } finally {
         setLoading(false);
       }
@@ -47,23 +47,27 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) {
+      setMsg({ text: "অনুগ্রহ করে আপনার নাম দিন। (Full Name is required.)", type: 'error' });
+      return;
+    }
+
     setLoading(true);
     setMsg(null);
 
     const authUpdate = await supabase.auth.updateUser({
       data: {
-        full_name: name,
+        full_name: name.trim(),
         avatar_url: photo,
       }
     });
 
     if (authUpdate.error) {
       console.error('Profile Update Error:', authUpdate.error);
-      setMsg({ text: 'Error saving profile: ' + authUpdate.error.message, type: 'error' });
+      setMsg({ text: 'ত্রুটি ঘটেছে: ' + authUpdate.error.message, type: 'error' });
     } else {
-      console.log('Profile updated successfully');
-      setMsg({ text: '✨ Profile customized successfully!', type: 'success' });
-      updateUserContext({ name, profile_picture: photo });
+      setMsg({ text: '✅ প্রোফাইল সফলভাবে পরিবর্তন করা হয়েছে! (Profile updated successfully!)', type: 'success' });
+      updateUserContext({ name: name.trim(), profile_picture: photo });
       setTimeout(() => {
         onClose();
       }, 1500);
@@ -72,133 +76,127 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[120] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md max-h-[92vh] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] flex flex-col overflow-hidden border border-slate-100 dark:border-zinc-800 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 bg-black/60 z-[120] flex items-center justify-center p-4 backdrop-blur-xs font-sans">
+      <div 
+        id="profile-modal-container"
+        className="bg-m3-surface text-m3-on-surface rounded-2xl w-full max-w-md max-h-[90vh] shadow-xl flex flex-col overflow-hidden border border-m3-surface-variant/40 animate-in fade-in duration-100"
+      >
         
-        {/* Sticky Header */}
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center bg-white/90 dark:bg-zinc-900/95 sticky top-0 z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-              <Shield className="w-4 h-4 stroke-[2.5]" />
+        {/* Simple Header */}
+        <div className="px-6 py-4.5 border-b border-m3-surface-variant flex justify-between items-center bg-m3-surface sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-m3-primary-container text-m3-on-primary-container flex items-center justify-center">
+              <User className="w-5 h-5 stroke-[2]" />
             </div>
-            <h2 className="text-lg font-black tracking-tight text-slate-800 dark:text-neutral-100">Customize Profile</h2>
+            <div>
+              <h2 className="text-base font-bold tracking-tight text-m3-on-surface">আমার প্রোফাইল</h2>
+              <p className="text-[11px] text-m3-on-surface-variant font-medium uppercase tracking-wider">Customize Profile</p>
+            </div>
           </div>
           <button 
+            id="close-profile-btn"
             onClick={onClose} 
-            className="p-1.5 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-350 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all active:scale-90"
+            className="p-1.5 text-m3-on-surface-variant hover:text-m3-on-surface rounded-full hover:bg-m3-surface-variant transition-colors"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
         
-        {/* Scrollable Form Body */}
-        <div className="p-6 overflow-y-auto flex-1">
+        {/* Form Body */}
+        <div className="p-6 overflow-y-auto flex-1 space-y-6">
           {msg && (
-            <div className={`p-3.5 rounded-2xl mb-5 text-xs font-bold leading-relaxed flex items-start gap-2.5 border ${
+            <div className={`p-4 rounded-xl text-xs font-medium leading-relaxed border ${
               msg.type === 'error' 
-                ? 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border-red-100 dark:border-red-950/50' 
-                : 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-950/50'
+                ? 'bg-m3-error-container text-m3-on-error-container border-m3-error/20' 
+                : 'bg-m3-success-container/30 text-m3-on-success-container border-m3-success/20'
             }`}>
-              <span className="w-1.5 h-1.5 rounded-full bg-current mt-1.5 animate-pulse shrink-0" />
-              <span>{msg.text}</span>
+              {msg.text}
             </div>
           )}
 
           <form onSubmit={handleSave} className="space-y-6">
             
-            {/* Elegant Picture Upload Card Area */}
-            <div className="flex flex-col items-center py-2 bg-slate-50/55 dark:bg-zinc-950/20 border border-slate-100 dark:border-zinc-800 rounded-2xl p-4">
-              <div className="relative group">
-                {/* Visual Circle Frame */}
-                <div className="w-24 h-24 bg-slate-150 dark:bg-zinc-800 rounded-full flex items-center justify-center overflow-hidden border-2 border-white dark:border-zinc-900 shadow-md ring-4 ring-indigo-50 dark:ring-indigo-950/50 transition-all duration-200 group-hover:scale-[1.02]">
+            {/* Extremely Clean & Clean Profile Photo Area */}
+            <div className="flex flex-col items-center justify-center py-4 bg-m3-surface-variant/40 rounded-xl border border-m3-surface-variant/50">
+              <div className="relative">
+                {/* Minimalist Round Avatar */}
+                <div className="w-20 h-20 bg-m3-surface rounded-full flex items-center justify-center overflow-hidden border-2 border-m3-primary/30 shadow-sm">
                   {photo ? (
-                    <img src={photo} alt="Profile avatar" className="w-full h-full object-cover" />
+                    <img src={photo} alt="User Avatar" className="w-full h-full object-cover" />
                   ) : (
-                    <User className="w-10 h-10 text-slate-400 dark:text-zinc-500" />
+                    <User className="w-8 h-8 text-m3-on-surface-variant/60" />
                   )}
                 </div>
                 
-                {/* Floating Action Trigger Badge */}
-                <label className="absolute -bottom-1 -right-1 bg-indigo-600 dark:bg-indigo-500 text-white p-2 rounded-full cursor-pointer shadow-md hover:scale-110 active:scale-95 transition-all duration-150">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                {/* Change photo button */}
+                <label className="absolute bottom-0 right-0 bg-m3-primary text-m3-on-primary hover:bg-m3-primary/95 p-1.5 rounded-full cursor-pointer shadow-md transition-all active:scale-95">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
                     <circle cx="12" cy="13" r="3"/>
                   </svg>
-                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} disabled={loading} />
+                  <input id="profile-photo-input" type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} disabled={loading} />
                 </label>
               </div>
-              <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400 dark:text-neutral-500 mt-3 flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-500" /> profile picture
-              </span>
+              <p className="text-[11px] font-bold text-m3-on-surface-variant mt-3 uppercase tracking-wider">
+                প্রোফাইল ছবি পরিবর্তন করুন (Change Photo)
+              </p>
             </div>
 
-            {/* Fields Details Section */}
+            {/* Input fields */}
             <div className="space-y-4">
               
-              {/* Full Name Input Column */}
+              {/* Full Name field */}
               <div>
-                <label className="block text-[11px] font-black text-slate-400 dark:text-neutral-400 mb-1.5 uppercase tracking-wider ml-0.5">
-                  Full Name
+                <label className="block text-[11px] font-bold text-m3-on-surface-variant mb-1.5 uppercase tracking-wider">
+                  পুরো নাম (Full Name)
                 </label>
-                <div className="relative group/input">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-zinc-500 transition-colors group-focus-within/input:text-indigo-600">
-                    <User className="w-4 h-4 stroke-[2.5]" />
-                  </div>
-                  <input 
-                    required 
-                    type="text" 
-                    value={name} 
-                    onChange={e => setName(e.target.value)} 
-                    disabled={loading}
-                    className="w-full bg-slate-50 dark:bg-zinc-950/40 text-slate-800 dark:text-slate-100 rounded-xl pl-10 pr-4 py-2.5 text-sm border border-slate-200/60 dark:border-zinc-800 focus:border-indigo-500 focus:bg-white dark:focus:bg-zinc-900 outline-none transition-all placeholder-slate-450 dark:placeholder-zinc-650" 
-                    placeholder="Enter full name" 
-                  />
-                </div>
+                <input 
+                  id="profile-name-input"
+                  required 
+                  type="text" 
+                  value={name} 
+                  onChange={e => setName(e.target.value)} 
+                  disabled={loading}
+                  className="w-full bg-m3-surface text-m3-on-surface rounded-xl px-4 py-3 text-sm border border-m3-surface-variant focus:border-m3-primary outline-none transition-all placeholder:text-m3-on-surface-variant/40" 
+                  placeholder="আপনার নাম লিখুন (e.g. মো: আব্দুর রহমান)" 
+                />
               </div>
 
-              {/* Read Only Managed Identity ID Column */}
+              {/* Read-only User Unique ID Block */}
               <div>
-                <label className="block text-[11px] font-black text-slate-400 dark:text-neutral-400 mb-1.5 uppercase tracking-wider ml-0.5">
-                  User ID
+                <label className="block text-[11px] font-bold text-m3-on-surface-variant mb-1.5 uppercase tracking-wider">
+                  ইউজার আইডি (User ID)
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-zinc-500">
-                    <KeyRound className="w-4 h-4" />
-                  </div>
-                  <input 
-                    type="text" 
-                    value={uniqueId} 
-                    readOnly 
-                    className="w-full bg-slate-50/65 dark:bg-zinc-950/15 text-slate-500 dark:text-zinc-400 rounded-xl pl-10 pr-20 py-2.5 text-sm border border-slate-100 dark:border-zinc-850/50 outline-none font-mono cursor-not-allowed uppercase" 
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center">
-                    <span className="text-[8px] font-black uppercase tracking-wider text-slate-400 dark:text-neutral-500 bg-slate-150 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
-                      Secured
-                    </span>
-                  </div>
+                <div className="bg-m3-surface-variant/20 rounded-xl px-4 py-3 text-xs border border-m3-surface-variant/40 text-m3-on-surface-variant flex justify-between items-center font-mono">
+                  <span>{uniqueId.toUpperCase()}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-m3-on-surface-variant bg-m3-surface-variant px-2 py-0.5 rounded">
+                    সিস্টেম আইডি (ID)
+                  </span>
                 </div>
               </div>
 
             </div>
 
-            {/* Premium action submit handler */}
+            {/* Submit Action */}
             <button 
+              id="save-profile-btn"
               type="submit" 
               disabled={loading} 
-              className="w-full bg-indigo-600 dark:bg-indigo-500 text-white font-extrabold rounded-xl py-3 shadow-md hover:bg-indigo-500 dark:hover:bg-indigo-400 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 disabled:opacity-75 disabled:pointer-events-none text-sm leading-none"
+              className="w-full bg-m3-primary text-m3-on-primary font-bold rounded-xl py-3.5 shadow-sm hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none text-sm"
             >
               {loading ? (
                 <>
-                  <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <span>Saving...</span>
+                  <span>প্রোফাইল সংরক্ষণ করা হচ্ছে...</span>
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4 stroke-[3]" />
-                  <span>Save Profile</span>
+                  <Check className="w-4.5 h-4.5 stroke-[2.5]" />
+                  <span>তথ্য আপডেট করুন (Save Profile)</span>
                 </>
               )}
             </button>

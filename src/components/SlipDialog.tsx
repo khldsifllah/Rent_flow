@@ -256,20 +256,20 @@ Thank you for using Rent Flow`;
 
   return (
     <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-3 backdrop-blur-xs font-sans">
-      <div className="bg-white rounded-2xl w-full max-w-[340px] flex flex-col shadow-2xl overflow-hidden max-h-[96vh] animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-m3-surface text-m3-on-surface rounded-2xl w-full max-w-[340px] flex flex-col shadow-xl overflow-hidden max-h-[96vh] animate-in fade-in zoom-in-95 duration-100 border border-m3-surface-variant/40">
         
         {/* Header (Modal Control) */}
-        <div className="flex justify-between items-center px-4 py-3 border-b border-neutral-100 shrink-0">
-          <span className="text-sm font-black text-slate-800 tracking-wide uppercase">Rent Flow Receipt</span>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-900 rounded-full hover:bg-neutral-100 transition-colors">
+        <div className="flex justify-between items-center px-4 py-3.5 border-b border-m3-surface-variant/50 shrink-0 bg-m3-surface">
+          <span className="text-xs font-bold text-m3-on-surface tracking-wide uppercase">পরিশোধের রসিদ (Payment Slip)</span>
+          <button onClick={onClose} className="p-1 text-m3-on-surface-variant hover:text-m3-on-surface rounded-full hover:bg-m3-surface-variant transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Compact Center Scrollless Wrapper */}
-        <div className="p-4 bg-neutral-50 flex-1 flex flex-col items-center justify-center overflow-visible">
+        <div className="p-4 bg-m3-background/45 flex-1 flex flex-col items-center justify-center overflow-visible">
           
-          {/* Capturable Redesigned Slip Area - Perfect inline style layout, white background, no external fonts/images */}
+          {/* Capturable Redesigned Slip Area - Clean black-and-white print-ready local format */}
           <div 
             ref={slipRef} 
             id="slip-content" 
@@ -283,7 +283,7 @@ Thank you for using Rent Flow`;
               display: 'flex',
               flexDirection: 'column',
               borderRadius: '8px',
-              border: '1.5px solid #000000',
+              border: '2px solid #000000',
               height: 'auto',
               overflow: 'visible',
               boxShadow: 'none'
@@ -291,76 +291,79 @@ Thank you for using Rent Flow`;
           >
             
             {/* TOP HEADER */}
-            <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '2.5px double #000000', paddingBottom: '12px' }}>
-              <div style={{ fontSize: '26px', fontWeight: '900', color: '#000000', letterSpacing: '-0.05em', lineHeight: '1', fontFamily: 'sans-serif' }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '2px dashed #000000', paddingBottom: '12px' }}>
+              <div style={{ fontSize: '24px', fontWeight: '900', color: '#000000', letterSpacing: '-0.04em', lineHeight: '1' }}>
                 Rent Flow
               </div>
-              <div style={{ fontSize: '7.5px', fontWeight: '800', color: '#475569', letterSpacing: '0.18em', marginTop: '6px', textTransform: 'uppercase', fontFamily: 'sans-serif' }}>
-                OFFICIAL PAYMENT RECEIPT
+              <div style={{ fontSize: '10px', fontWeight: '800', color: '#000000', marginTop: '4px', fontStyle: 'normal' }}>
+                টাকা প্রাপ্তি রসিদ
+              </div>
+              <div style={{ fontSize: '7.5px', fontWeight: '700', color: '#555555', letterSpacing: '0.08em', marginTop: '2px', textTransform: 'uppercase' }}>
+                Official Rental Receipt
               </div>
             </div>
 
             {/* MIDDLE INFO BOX ROWS */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               
               {/* Slip Number */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
-                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>SLIP NO:</span>
-                <span style={{ color: '#000000', fontSize: '11.5px', fontWeight: '800', fontFamily: 'monospace' }}>{displaySlipNumber}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '5px', borderBottom: '1px dotted #000000' }}>
+                <span style={{ color: '#444444', fontSize: '10px', fontWeight: '700' }}>রসিদ নং (Slip No):</span>
+                <span style={{ color: '#000000', fontSize: '11px', fontWeight: '800', fontFamily: 'monospace' }}>{displaySlipNumber}</span>
               </div>
 
               {/* Date Paid */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
-                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>DATE PAID:</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '5px', borderBottom: '1px dotted #000000' }}>
+                <span style={{ color: '#444444', fontSize: '10px', fontWeight: '700' }}>তারিখ (Date):</span>
                 <span style={{ color: '#000000', fontSize: '11px', fontWeight: '700' }}>{formattedDatePaid}</span>
               </div>
 
               {/* Landlord Name */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
-                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>LANDLORD:</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '5px', borderBottom: '1px dotted #000000' }}>
+                <span style={{ color: '#444444', fontSize: '10px', fontWeight: '700' }}>বাড়িওয়ালা (Owner):</span>
                 <span style={{ color: '#000000', fontSize: '11px', fontWeight: '700', maxWidth: '160px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{landlordName}</span>
               </div>
 
               {/* Tenant Name */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
-                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>TENANT:</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '5px', borderBottom: '1px dotted #000000' }}>
+                <span style={{ color: '#444444', fontSize: '10px', fontWeight: '700' }}>ভাড়াটিয়া (Tenant):</span>
                 <span style={{ color: '#000000', fontSize: '11px', fontWeight: '700', maxWidth: '160px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tenantName}</span>
               </div>
 
               {/* Flat or Shop Name */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
-                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>FLAT/SHOP:</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '5px', borderBottom: '1px dotted #000000' }}>
+                <span style={{ color: '#444444', fontSize: '10px', fontWeight: '700' }}>ফ্ল্যাট/দোকান (Unit):</span>
                 <span style={{ color: '#000000', fontSize: '11px', fontWeight: '800', fontFamily: 'monospace' }}>{flatName}</span>
               </div>
 
               {/* Month & Year */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
-                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>MONTH:</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '5px', borderBottom: '1px dotted #000000' }}>
+                <span style={{ color: '#444444', fontSize: '10px', fontWeight: '700' }}>ভাড়ার মাস (Month):</span>
                 <span style={{ color: '#000000', fontSize: '11px', fontWeight: '700' }}>{periodText}</span>
               </div>
 
               {/* Amount Cleared */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
-                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>AMOUNT:</span>
-                <span style={{ color: '#000000', fontSize: '13.5px', fontWeight: '900', fontFamily: 'sans-serif' }}>৳{amountPaid.toLocaleString('en-BD')}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '5px', borderBottom: '1.5px solid #000000' }}>
+                <span style={{ color: '#000000', fontSize: '10.5px', fontWeight: '800' }}>টাকার পরিমাণ (Amount):</span>
+                <span style={{ color: '#000000', fontSize: '14px', fontWeight: '900' }}>৳{amountPaid.toLocaleString('en-BD')}</span>
               </div>
 
               {/* Status CLEARED Green Badge */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px' }}>
-                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>STATUS:</span>
+                <span style={{ color: '#444444', fontSize: '10.5px', fontWeight: '700' }}>অবস্থা (Status):</span>
                 <div style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   backgroundColor: '#ffffff',
-                  color: '#10b981',
-                  border: '1.5px solid #10b981',
+                  color: '#386a20',
+                  border: '1.5px solid #386a20',
                   borderRadius: '3px',
-                  padding: '1.5px 6px',
+                  padding: '2px 8px',
                   fontSize: '10.5px',
                   fontWeight: '900',
-                  letterSpacing: '0.05em'
+                  letterSpacing: '0.04em'
                 }}>
-                  CLEARED
+                  পরিশোধিত (PAID)
                 </div>
               </div>
 
@@ -369,39 +372,38 @@ Thank you for using Rent Flow`;
             {/* BOTTOM THANK YOU FOOTER TEXT */}
             <div style={{ 
               textAlign: 'center', 
-              fontSize: '9.5px', 
-              color: '#475569', 
-              marginTop: '22px', 
+              fontSize: '9px', 
+              color: '#333333', 
+              marginTop: '20px', 
               fontWeight: '700', 
               borderTop: '2px solid #000000', 
-              paddingTop: '10px',
-              fontStyle: 'normal'
+              paddingTop: '8px'
             }}>
-              Thank you for using Rent Flow
+              রেন্ট ফ্লো ব্যবহারের জন্য ধন্যবাদ
             </div>
 
           </div>
 
         </div>
 
-        {/* Operational Footer Actions */}
-        <div className="p-3.5 bg-neutral-100/90 border-t border-neutral-200 flex gap-3 shrink-0">
+        {/* Operational Footer Actions using M3 theme properties */}
+        <div className="p-3.5 bg-m3-surface border-t border-m3-surface-variant/40 flex gap-3 shrink-0">
           <button 
             onClick={handleDownload} 
             disabled={isPreparing}
-            className="flex-1 flex justify-center items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl py-2.5 px-3 shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 text-[12.5px]"
+            className="flex-1 flex justify-center items-center gap-1.5 bg-m3-primary text-m3-on-primary font-bold rounded-xl py-2.5 px-3 shadow-xs active:scale-[0.98] transition-all disabled:opacity-50 text-[12.5px]"
           >
-            <Download className="w-4 h-4 text-white" /> 
-            <span>Download JPG</span>
+            <Download className="w-4 h-4 text-m3-on-primary" /> 
+            <span>ডাউনলোড (Save)</span>
           </button>
           
           <button 
             onClick={handleShare} 
             disabled={isPreparing}
-            className="flex-1 flex justify-center items-center gap-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl py-2.5 px-3 active:scale-[0.98] transition-all disabled:opacity-50 text-[12.5px]"
+            className="flex-1 flex justify-center items-center gap-1.5 bg-m3-surface-variant text-m3-on-surface-variant font-bold rounded-xl py-2.5 px-3 active:scale-[0.98] transition-all disabled:opacity-50 text-[12.5px]"
           >
-            <Share2 className="w-4 h-4 text-slate-700" /> 
-            <span>Share Slip</span>
+            <Share2 className="w-4 h-4 text-m3-on-surface-variant" /> 
+            <span>শেয়ার (Share)</span>
           </button>
         </div>
       </div>
