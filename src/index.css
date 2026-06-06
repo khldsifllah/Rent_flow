@@ -1,6 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
+:root {
+  --safe-area-bottom: env(safe-area-inset-bottom);
+}
+
 @layer base {
   html, body {
     height: 100%;
@@ -85,4 +89,18 @@
   --color-m3-success-container: #b7f397;
   --color-m3-on-success: #ffffff;
   --color-m3-on-success-container: #042100;
+}
+
+.mobile-safe-container {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  .mobile-safe-container {
+    padding-bottom: 0px !important;
+  }
+}
+
+.mobile-safe-nav {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  padding-top: 16px;
 }

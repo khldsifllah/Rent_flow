@@ -45,14 +45,14 @@ export default function Layout() {
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+      <main className="flex-1 overflow-y-auto mobile-safe-container">
         <div className="max-w-7xl mx-auto w-full">
           <Outlet />
         </div>
       </main>
       
       {/* Bottom Navigation (Mobile) */}
-      <nav className="md:hidden fixed bottom-0 w-full bg-m3-surface border-t border-m3-surface-variant flex justify-around items-center h-[80px] px-2 z-50 pb-safe max-h-screen-hide-nav">
+      <nav className="md:hidden fixed bottom-0 w-full bg-m3-surface border-t border-m3-surface-variant flex justify-around items-center px-2 z-50 mobile-safe-nav max-h-screen-hide-nav">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
