@@ -96,70 +96,79 @@ Receipt generated via Rent Flow.`;
     const element = document.getElementById('slip-content');
     if (!element) return null;
 
-    // To ensure the capture is complete and doesn't get clipped by parent overflow, scroll position, or
-    // device borders, we clone the element and place it in a temporary off-screen container.
-    const clone = element.cloneNode(true) as HTMLDivElement;
+    // Get the scrollable container and modal wrapper to prevent clipping on mobile viewports
+    const scrollContainer = document.getElementById('slip-scroll-container');
+    const modalCard = document.getElementById('slip-modal-card');
+
+    // Save previous styles and scroll state
+    const originalScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+    const originalScrollHeight = scrollContainer ? scrollContainer.style.height : '';
+    const originalScrollMaxHeight = scrollContainer ? scrollContainer.style.maxHeight : '';
+    const originalScrollOverflow = scrollContainer ? scrollContainer.style.overflow : '';
     
-    // Reset height, border-radius, and shadow constraints
-    clone.style.position = 'absolute';
-    clone.style.top = '0';
-    clone.style.left = '0';
-    clone.style.width = '325px';
-    clone.style.height = 'auto';
-    clone.style.maxHeight = 'none';
-    clone.style.overflow = 'visible';
-    clone.style.boxShadow = 'none';
-    clone.style.transform = 'none';
-    clone.style.transition = 'none';
-    clone.classList.remove('shadow-2xl');
-    
-    const container = document.createElement('div');
-    container.style.position = 'absolute';
-    container.style.top = '-9999px';
-    container.style.left = '-9999px';
-    container.style.width = '350px';
-    container.style.height = 'auto';
-    container.style.overflow = 'visible';
-    container.style.boxSizing = 'border-box';
-    container.style.background = '#f1f5f9';
-    container.style.padding = '12px';
-    container.style.borderRadius = '16px';
-    container.appendChild(clone);
-    document.body.appendChild(container);
+    const originalModalMaxHeight = modalCard ? modalCard.style.maxHeight : '';
+    const originalModalOverflow = modalCard ? modalCard.style.overflow : '';
+
+    // Scroll to top and expand height constraints. This forces the browser to fully layout
+    // the payment slip of its genuine content height as a single continuous block, resolving
+    // any mobile clipping or missing security section/barcodes!
+    if (scrollContainer) {
+      scrollContainer.scrollTop = 0;
+      scrollContainer.style.height = 'auto';
+      scrollContainer.style.maxHeight = 'none';
+      scrollContainer.style.overflow = 'visible';
+    }
+    if (modalCard) {
+      modalCard.style.maxHeight = 'none';
+      modalCard.style.overflow = 'visible';
+    }
 
     try {
-      // Short delay for DOM attachment and SVG rasterization parsing
-      await new Promise(resolve => setTimeout(resolve, 60));
-      
-      const canvas = await html2canvas(clone, {
-        scale: 3, // High DPI rendering for beautiful crisper look
+      // Small repaint delay for the browser to adapt
+      await new Promise(resolve => setTimeout(resolve, 80));
+
+      // Capture using html2canvas directly from the active rendering DOM tree.
+      // This is extremely robust as it preserves fonts, responsive scale styles, and SVG sizes.
+      const canvas = await html2canvas(element, {
+        scale: 2.2, // Balanced high-resolution output (2.2x pixel density)
         useCORS: true,
-        allowTaint: false, // Must be false so toBlob & toDataURL are allowed
+        allowTaint: false, // CRITICAL: Must be false to prevent SecurityError when calling toDataURL() or toBlob()!
         backgroundColor: '#ffffff',
         logging: false,
-        height: clone.offsetHeight,
-        windowHeight: clone.offsetHeight,
+        height: element.offsetHeight,
+        windowHeight: element.offsetHeight,
+        scrollX: 0,
+        scrollY: 0
       });
+
       return canvas;
     } catch (err) {
-      console.warn("Cloned canvas capture failed, attempting in-place fallback:", err);
+      console.error("Advanced slip capture failed, trying standard fallback:", err);
       try {
+        // Simple direct fallback capture
         const canvas = await html2canvas(element, {
-          scale: 2,
+          scale: 1.5,
           useCORS: true,
           allowTaint: false,
-          backgroundColor: '#ffffff',
-          logging: false,
-          scrollY: -window.scrollY
+          scrollY: 0,
+          scrollX: 0
         });
         return canvas;
       } catch (fallbackErr) {
-        console.error("Direct fallback receipt capture failed:", fallbackErr);
+        console.error("CORS/Taint direct capture fallback failed:", fallbackErr);
         return null;
       }
     } finally {
-      if (document.body.contains(container)) {
-        document.body.removeChild(container);
+      // Instantly restore previous layout states and scroll offsets with zero visual flicker
+      if (scrollContainer) {
+        scrollContainer.style.height = originalScrollHeight;
+        scrollContainer.style.maxHeight = originalScrollMaxHeight;
+        scrollContainer.style.overflow = originalScrollOverflow;
+        scrollContainer.scrollTop = originalScrollTop;
+      }
+      if (modalCard) {
+        modalCard.style.maxHeight = originalModalMaxHeight;
+        modalCard.style.overflow = originalModalOverflow;
       }
     }
   };
@@ -316,7 +325,7 @@ Receipt generated via Rent Flow.`;
 
   return (
     <div className="fixed inset-0 bg-black/60 z-[100] flex flex-col items-center justify-center p-2 sm:p-4 backdrop-blur-sm">
-      <div className="bg-m3-surface rounded-3xl w-full max-w-sm max-h-[90vh] sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div id="slip-modal-card" className="bg-m3-surface rounded-3xl w-full max-w-sm max-h-[90vh] sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Modal Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-m3-surface-variant/20 shrink-0">
           <h2 className="text-base font-extrabold tracking-tight text-m3-on-surface">Payment Slip</h2>
@@ -326,7 +335,7 @@ Receipt generated via Rent Flow.`;
         </div>
         
         {/* Scrollable Body container to support full visibility of height-restricted screens */}
-        <div className="p-4 bg-slate-100/95 dark:bg-zinc-950/70 overflow-y-auto w-full flex-1">
+        <div id="slip-scroll-container" className="p-4 bg-slate-100/95 dark:bg-zinc-950/70 overflow-y-auto w-full flex-1">
           <div className="flex items-center justify-center py-2 w-full min-h-min">
             {/* Slip Render Area - Designed elegantly, avoiding clipping */}
             <div ref={slipRef} id="slip-content" className="bg-white text-slate-800 w-full max-w-[325px] p-5 shadow-2xl border border-slate-100 flex flex-col relative shrink-0 rounded-2xl overflow-hidden font-sans">
