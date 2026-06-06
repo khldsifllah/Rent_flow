@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { toJpeg, toBlob } from 'html-to-image';
 import html2canvas from 'html2canvas';
 import { format } from 'date-fns';
 import { X, Download, Share2, ShieldCheck, User, Calendar, Landmark, Ticket } from 'lucide-react';
@@ -7,11 +6,11 @@ import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { motion, AnimatePresence } from 'motion/react';
-import Logo from './Logo';
 
 export default function SlipDialog({ slipData, isOpen, onClose }: { slipData: any, isOpen: boolean, onClose: () => void }) {
   const slipRef = useRef<HTMLDivElement>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [isPreparing, setIsPreparing] = useState(false);
 
   useEffect(() => {
     if (toast) {
@@ -92,101 +91,62 @@ Receipt generated via Rent Flow.`;
     }
   };
 
-  const generateSlipCanvas = async (): Promise<HTMLCanvasElement | null> => {
+  const downloadSlip = async (): Promise<Blob | null> => {
     const element = document.getElementById('slip-content');
     if (!element) return null;
-
-    // Get the scrollable container and modal wrapper to prevent clipping on mobile viewports
-    const scrollContainer = document.getElementById('slip-scroll-container');
-    const modalCard = document.getElementById('slip-modal-card');
-
-    // Save previous styles and scroll state
-    const originalScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
-    const originalScrollHeight = scrollContainer ? scrollContainer.style.height : '';
-    const originalScrollMaxHeight = scrollContainer ? scrollContainer.style.maxHeight : '';
-    const originalScrollOverflow = scrollContainer ? scrollContainer.style.overflow : '';
     
-    const originalModalMaxHeight = modalCard ? modalCard.style.maxHeight : '';
-    const originalModalOverflow = modalCard ? modalCard.style.overflow : '';
-
-    // Scroll to top and expand height constraints. This forces the browser to fully layout
-    // the payment slip of its genuine content height as a single continuous block, resolving
-    // any mobile clipping or missing security section/barcodes!
-    if (scrollContainer) {
-      scrollContainer.scrollTop = 0;
-      scrollContainer.style.height = 'auto';
-      scrollContainer.style.maxHeight = 'none';
-      scrollContainer.style.overflow = 'visible';
-    }
-    if (modalCard) {
-      modalCard.style.maxHeight = 'none';
-      modalCard.style.overflow = 'visible';
-    }
-
-    try {
-      // Small repaint delay for the browser to adapt
-      await new Promise(resolve => setTimeout(resolve, 80));
-
-      // Capture using html2canvas directly from the active rendering DOM tree.
-      // This is extremely robust as it preserves fonts, responsive scale styles, and SVG sizes.
-      const canvas = await html2canvas(element, {
-        scale: 2.2, // Balanced high-resolution output (2.2x pixel density)
-        useCORS: true,
-        allowTaint: false, // CRITICAL: Must be false to prevent SecurityError when calling toDataURL() or toBlob()!
-        backgroundColor: '#ffffff',
-        logging: false,
-        height: element.offsetHeight,
-        windowHeight: element.offsetHeight,
-        scrollX: 0,
-        scrollY: 0
-      });
-
-      return canvas;
-    } catch (err) {
-      console.error("Advanced slip capture failed, trying standard fallback:", err);
-      try {
-        // Simple direct fallback capture
-        const canvas = await html2canvas(element, {
-          scale: 1.5,
-          useCORS: true,
-          allowTaint: false,
-          scrollY: 0,
-          scrollX: 0
-        });
-        return canvas;
-      } catch (fallbackErr) {
-        console.error("CORS/Taint direct capture fallback failed:", fallbackErr);
-        return null;
+    const scale = window.devicePixelRatio || 2;
+    
+    const renderedCanvas = await html2canvas(element, {
+      scale: scale,
+      useCORS: false,
+      allowTaint: false,
+      backgroundColor: '#ffffff',
+      logging: false,
+      removeContainer: true,
+      foreignObjectRendering: false,
+      imageTimeout: 0,
+      onclone: (clonedDoc) => {
+        const clonedElement = clonedDoc.getElementById('slip-content');
+        if (clonedElement) {
+          clonedElement.style.maxHeight = 'none';
+          clonedElement.style.overflow = 'visible';
+          clonedElement.style.height = 'auto';
+          clonedElement.style.transform = 'none';
+        }
       }
-    } finally {
-      // Instantly restore previous layout states and scroll offsets with zero visual flicker
-      if (scrollContainer) {
-        scrollContainer.style.height = originalScrollHeight;
-        scrollContainer.style.maxHeight = originalScrollMaxHeight;
-        scrollContainer.style.overflow = originalScrollOverflow;
-        scrollContainer.scrollTop = originalScrollTop;
-      }
-      if (modalCard) {
-        modalCard.style.maxHeight = originalModalMaxHeight;
-        modalCard.style.overflow = originalModalOverflow;
-      }
-    }
+    });
+    
+    return new Promise((resolve) => {
+      renderedCanvas.toBlob((blob) => {
+        resolve(blob);
+      }, 'image/jpeg', 0.95);
+    });
+  };
+
+  const blobToDataURL = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   };
 
   const handleDownload = async () => {
     try {
+      setIsPreparing(true);
       setToast({ message: "⏳ Preparing your download...", type: 'success' });
       
-      const canvas = await generateSlipCanvas();
-      if (!canvas) {
-        throw new Error("Canvas generation failed");
+      const blob = await downloadSlip();
+      if (!blob) {
+        throw new Error("Blob generation failed");
       }
       
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-      
       if (Capacitor.isNativePlatform()) {
+        const dataUrl = await blobToDataURL(blob);
         const base64Data = dataUrl.split(',')[1];
-        const fileName = `Slip-${slipNumber}.jpg`;
+        const fileName = `RentFlow-Slip-${slipNumber}.jpg`;
         await Filesystem.writeFile({
           path: fileName,
           data: base64Data,
@@ -196,15 +156,18 @@ Receipt generated via Rent Flow.`;
           message: `💾 Saved to Documents as ${fileName}`,
           type: 'success'
         });
+        setIsPreparing(false);
         return;
       }
 
-      const link = document.createElement("a");
-      link.download = `Slip-${slipNumber}.jpg`;
-      link.href = dataUrl;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `RentFlow-Slip-${slipNumber}.jpg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
 
       setToast({
         message: "💾 Receipt downloaded successfully!",
@@ -213,28 +176,31 @@ Receipt generated via Rent Flow.`;
     } catch (error) {
       console.warn("Error downloading slip:", error);
       setToast({
-        message: "Failed to download receipt image.",
+        message: "Download failed. Please try again.",
         type: 'error'
       });
+    } finally {
+      setIsPreparing(false);
     }
   };
 
   const handleShare = async () => {
     try {
+      setIsPreparing(true);
       setToast({ message: "⏳ Opening sharing options...", type: 'success' });
       
-      const canvas = await generateSlipCanvas();
-      if (!canvas) {
+      const blob = await downloadSlip();
+      if (!blob) {
         fallbackToClipboardCopy();
+        setIsPreparing(false);
         return;
       }
       
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-      
       if (Capacitor.isNativePlatform()) {
         try {
+          const dataUrl = await blobToDataURL(blob);
           const base64Data = dataUrl.split(',')[1];
-          const fileName = `Slip-${slipNumber}.jpg`;
+          const fileName = `RentFlow-Slip-${slipNumber}.jpg`;
           
           const writeResult = await Filesystem.writeFile({
             path: fileName,
@@ -257,69 +223,54 @@ Receipt generated via Rent Flow.`;
             fallbackToClipboardCopy();
           }
         }
+        setIsPreparing(false);
         return;
       }
 
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.95));
-      if (!blob) {
-        fallbackToClipboardCopy();
-        return;
-      }
-      
-      const file = new File([blob], `Slip-${slipNumber}.jpg`, { type: "image/jpeg" });
-      
-      if (navigator.share) {
-        const canShareFiles = navigator.canShare && navigator.canShare({ files: [file] });
-        
-        if (canShareFiles) {
-          try {
-            await navigator.share({
-              title: 'Rent Flow Payment Slip',
-              text: `Payment receipt from Rent Flow. ৳${amountPaid} paid by ${tenantName} for ${billingMonth} ${billingYear}.`,
-              files: [file],
-            });
-          } catch (shareError: any) {
-            const errorMsg = shareError.message?.toLowerCase() || '';
-            if (shareError.name === 'AbortError' || errorMsg.includes('cancel') || errorMsg.includes('abort')) {
-              console.log("Share canceled.");
-            } else {
-              console.warn("File share failed, falling back to simple copy text...", shareError);
-              try {
-                await navigator.share({
-                  title: 'Rent Flow Payment Slip',
-                  text: `Rent Flow Receipt\nSlip No: ${slipNumber}\nLandlord: ${landlordName}\nTenant: ${tenantName}\nProperty: ${flatName}\nPeriod: ${billingMonth} ${billingYear}\nAmount: ৳${amountPaid.toLocaleString('en-BD')}\nStatus: ${paymentStatus}`,
-                });
-              } catch (textShareError: any) {
-                const txtErrorMsg = textShareError.message?.toLowerCase() || '';
-                if (textShareError.name === 'AbortError' || txtErrorMsg.includes('cancel') || txtErrorMsg.includes('abort')) {
-                  console.log("Text share canceled.");
-                } else {
-                  fallbackToClipboardCopy();
-                }
+      const file = new File(
+        [blob], 
+        `RentFlow-Slip-${slipNumber}.jpg`, 
+        { type: 'image/jpeg' }
+      );
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: 'Rent Flow Payment Receipt',
+            text: `Payment receipt for ${tenantName} - ${billingMonth} ${billingYear}`,
+            files: [file]
+          });
+        } catch (shareError: any) {
+          const errorMsg = shareError.message?.toLowerCase() || '';
+          if (shareError.name === 'AbortError' || errorMsg.includes('cancel') || errorMsg.includes('abort')) {
+            console.log("Share canceled.");
+          } else {
+            console.warn("File share failed, falling back to simple copy text...", shareError);
+            try {
+              await navigator.share({
+                title: 'Rent Flow Payment Slip',
+                text: `Rent Flow Receipt\nSlip No: ${slipNumber}\nLandlord: ${landlordName}\nTenant: ${tenantName}\nProperty: ${flatName}\nPeriod: ${billingMonth} ${billingYear}\nAmount: ৳${amountPaid.toLocaleString('en-BD')}\nStatus: ${paymentStatus}`,
+              });
+            } catch (textShareError: any) {
+              const txtErrorMsg = textShareError.message?.toLowerCase() || '';
+              if (textShareError.name === 'AbortError' || txtErrorMsg.includes('cancel') || txtErrorMsg.includes('abort')) {
+                console.log("Text share canceled.");
+              } else {
+                fallbackToClipboardCopy();
               }
-            }
-          }
-        } else {
-          try {
-            await navigator.share({
-              title: 'Rent Flow Payment Slip',
-              text: `Rent Flow Receipt\nSlip No: ${slipNumber}\nLandlord: ${landlordName}\nTenant: ${tenantName}\nProperty: ${flatName}\nPeriod: ${billingMonth} ${billingYear}\nAmount: ৳${amountPaid.toLocaleString('en-BD')}\nStatus: ${paymentStatus}`,
-            });
-          } catch (textError: any) {
-            const txtErrorMsg = textError.message?.toLowerCase() || '';
-            if (textError.name === 'AbortError' || txtErrorMsg.includes('cancel') || txtErrorMsg.includes('abort')) {
-              console.log("Text share canceled.");
-            } else {
-              fallbackToClipboardCopy();
             }
           }
         }
       } else {
-        fallbackToClipboardCopy();
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
       }
     } catch (error) {
        console.warn("Share routine error:", error);
        fallbackToClipboardCopy();
+    } finally {
+      setIsPreparing(false);
     }
   };
 
@@ -360,7 +311,52 @@ Receipt generated via Rent Flow.`;
             <div className="relative z-10 pt-1">
               {/* Brand Header */}
               <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5 mb-2.5 text-left">
-                <Logo className="w-8 h-8 shrink-0" />
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 200 200" 
+                  className="w-8 h-8 shrink-0"
+                >
+                  <defs>
+                    <linearGradient id="slipMainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#4F46E5" />
+                      <stop offset="100%" stopColor="#2563EB" />
+                    </linearGradient>
+                    <linearGradient id="slipAccentGrad" x1="100%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="#38BDF8" />
+                      <stop offset="100%" stopColor="#818CF8" />
+                    </linearGradient>
+                    <linearGradient id="slipTakaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#10B981" />
+                      <stop offset="100%" stopColor="#34D399" />
+                    </linearGradient>
+                    <filter id="slipSoftShadow" x="-10%" y="-10%" width="130%" height="130%">
+                      <feDropShadow dx="0" dy="6" stdDeviation="6" floodOpacity="0.2" floodColor="#000000" />
+                    </filter>
+                    <filter id="slipBgBlur" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="15" />
+                    </filter>
+                  </defs>
+
+                  <rect width="200" height="200" rx="52" fill="url(#slipMainGrad)" />
+                  <circle cx="100" cy="100" r="75" fill="url(#slipAccentGrad)" opacity="0.3" filter="url(#slipBgBlur)" />
+
+                  <g transform="translate(10, 8)" filter="url(#slipSoftShadow)">
+                    <rect x="42" y="80" width="44" height="75" rx="10" fill="white" opacity="0.95" />
+                    <rect x="54" y="96" width="18" height="15" rx="4" fill="url(#slipMainGrad)" opacity="0.65" />
+                    <rect x="54" y="122" width="18" height="15" rx="4" fill="url(#slipMainGrad)" opacity="0.65" />
+                    
+                    <rect x="94" y="45" width="56" height="110" rx="12" fill="white" />
+                    <rect x="112" y="64" width="20" height="16" rx="5" fill="url(#slipMainGrad)" opacity="0.8" />
+                    <rect x="112" y="92" width="20" height="16" rx="5" fill="url(#slipMainGrad)" opacity="0.8" />
+                    <path d="M112 155 V 128 C 112 121, 117 116, 122 116 H 122 C 127 116, 132 121, 132 128 V 155 Z" fill="url(#slipMainGrad)" opacity="0.9" />
+                  </g>
+
+                  <path d="M40 170 C 80 145, 120 195, 160 170" stroke="url(#slipAccentGrad)" strokeWidth="12" strokeLinecap="round" fill="none" filter="url(#slipSoftShadow)" />
+
+                  <circle cx="160" cy="45" r="28" fill="white" filter="url(#slipSoftShadow)" />
+                  <circle cx="160" cy="45" r="24" fill="url(#slipTakaGrad)" />
+                  <text x="160.5" y="56" fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" fontSize="28" fontWeight="800" fill="white" textAnchor="middle">৳</text>
+                </svg>
                 <div className="flex flex-col">
                   <h1 className="text-sm font-black tracking-tight text-slate-900">Rent Flow</h1>
                   <p className="text-[7px] text-slate-400 font-extrabold tracking-widest uppercase">Official Payment Receipt</p>
@@ -516,17 +512,43 @@ Receipt generated via Rent Flow.`;
         <div className="p-5 bg-m3-surface/90 backdrop-blur-md border-t border-m3-surface-variant/30 flex gap-3.5">
           <button 
             onClick={handleDownload} 
-            className="flex-1 flex justify-center items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl py-3 px-3 shadow-md active:scale-[0.98] transition-all duration-200"
+            disabled={isPreparing}
+            className="flex-1 flex justify-center items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl py-3 px-3 shadow-md active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
           >
-            <Download className="w-4 h-4 stroke-[2.5]" /> 
-            <span className="text-[13px] tracking-wide">Download</span>
+            {isPreparing ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="text-[13px] tracking-wide">Preparing...</span>
+              </span>
+            ) : (
+              <>
+                <Download className="w-4 h-4 stroke-[2.5]" /> 
+                <span className="text-[13px] tracking-wide">Download</span>
+              </>
+            )}
           </button>
           <button 
             onClick={handleShare} 
-            className="flex-1 flex justify-center items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-100 font-extrabold rounded-2xl py-3 px-3 active:scale-[0.98] transition-all duration-200"
+            disabled={isPreparing}
+            className="flex-1 flex justify-center items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-100 font-extrabold rounded-2xl py-3 px-3 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
           >
-            <Share2 className="w-4 h-4 stroke-[2.5]" /> 
-            <span className="text-[13px] tracking-wide">Share Receipt</span>
+            {isPreparing ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4 text-slate-600 dark:text-slate-300" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="text-[13px] tracking-wide">Preparing...</span>
+              </span>
+            ) : (
+              <>
+                <Share2 className="w-4 h-4 stroke-[2.5]" /> 
+                <span className="text-[13px] tracking-wide">Share Receipt</span>
+              </>
+            )}
           </button>
         </div>
       </div>
