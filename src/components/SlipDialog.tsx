@@ -289,7 +289,7 @@ Receipt generated via Rent Flow.`;
         <div id="slip-scroll-container" className="p-4 bg-slate-100/95 dark:bg-zinc-950/70 overflow-y-auto w-full flex-1">
           <div className="flex items-center justify-center py-2 w-full min-h-min">
             {/* Slip Render Area - Designed elegantly, avoiding clipping */}
-            <div ref={slipRef} id="slip-content" className="bg-white text-slate-800 w-full max-w-[325px] p-5 shadow-2xl border border-slate-100 flex flex-col relative shrink-0 rounded-2xl overflow-hidden font-sans">
+            <div ref={slipRef} id="slip-content" className="bg-white text-slate-800 w-full max-w-[325px] p-5 shadow-2xl border border-slate-100 flex flex-col relative shrink-0 rounded-2xl font-sans" style={{ height: 'auto', overflow: 'visible', maxHeight: 'none' }}>
               {/* Top Color Bar accent */}
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-700 via-indigo-500 to-emerald-500 z-20" />
 
