@@ -92,20 +92,88 @@ Receipt generated via Rent Flow.`;
     }
   };
 
+  const generateSlipCanvas = async (): Promise<HTMLCanvasElement | null> => {
+    const element = document.getElementById('slip-content');
+    if (!element) return null;
+
+    // To ensure the capture is complete and doesn't get clipped by parent overflow, scroll position, or
+    // device borders, we clone the element and place it in a temporary off-screen container.
+    const clone = element.cloneNode(true) as HTMLDivElement;
+    
+    // Reset height, border-radius, and shadow constraints
+    clone.style.position = 'absolute';
+    clone.style.top = '0';
+    clone.style.left = '0';
+    clone.style.width = '325px';
+    clone.style.height = 'auto';
+    clone.style.maxHeight = 'none';
+    clone.style.overflow = 'visible';
+    clone.style.boxShadow = 'none';
+    clone.style.transform = 'none';
+    clone.style.transition = 'none';
+    clone.classList.remove('shadow-2xl');
+    
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.top = '-9999px';
+    container.style.left = '-9999px';
+    container.style.width = '350px';
+    container.style.height = 'auto';
+    container.style.overflow = 'visible';
+    container.style.boxSizing = 'border-box';
+    container.style.background = '#f1f5f9';
+    container.style.padding = '12px';
+    container.style.borderRadius = '16px';
+    container.appendChild(clone);
+    document.body.appendChild(container);
+
+    try {
+      // Short delay for DOM attachment and SVG rasterization parsing
+      await new Promise(resolve => setTimeout(resolve, 60));
+      
+      const canvas = await html2canvas(clone, {
+        scale: 3, // High DPI rendering for beautiful crisper look
+        useCORS: true,
+        allowTaint: false, // Must be false so toBlob & toDataURL are allowed
+        backgroundColor: '#ffffff',
+        logging: false,
+        height: clone.offsetHeight,
+        windowHeight: clone.offsetHeight,
+      });
+      return canvas;
+    } catch (err) {
+      console.warn("Cloned canvas capture failed, attempting in-place fallback:", err);
+      try {
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#ffffff',
+          logging: false,
+          scrollY: -window.scrollY
+        });
+        return canvas;
+      } catch (fallbackErr) {
+        console.error("Direct fallback receipt capture failed:", fallbackErr);
+        return null;
+      }
+    } finally {
+      if (document.body.contains(container)) {
+        document.body.removeChild(container);
+      }
+    }
+  };
+
   const handleDownload = async () => {
     try {
-      const element = document.getElementById('slip-content');
-      if (!element) return;
+      setToast({ message: "⏳ Preparing your download...", type: 'success' });
       
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        height: element.scrollHeight,
-        windowHeight: element.scrollHeight,
-        scrollY: 0
-      });
-      const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+      const canvas = await generateSlipCanvas();
+      if (!canvas) {
+        throw new Error("Canvas generation failed");
+      }
+      
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
       
       if (Capacitor.isNativePlatform()) {
         const base64Data = dataUrl.split(',')[1];
@@ -130,11 +198,11 @@ Receipt generated via Rent Flow.`;
       document.body.removeChild(link);
 
       setToast({
-        message: "💾 Receipt image downloaded successfully!",
+        message: "💾 Receipt downloaded successfully!",
         type: 'success'
       });
     } catch (error) {
-      console.warn("Error generating slip image:", error);
+      console.warn("Error downloading slip:", error);
       setToast({
         message: "Failed to download receipt image.",
         type: 'error'
@@ -144,18 +212,15 @@ Receipt generated via Rent Flow.`;
 
   const handleShare = async () => {
     try {
-      const element = document.getElementById('slip-content');
-      if (!element) return;
+      setToast({ message: "⏳ Opening sharing options...", type: 'success' });
       
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        height: element.scrollHeight,
-        windowHeight: element.scrollHeight,
-        scrollY: 0
-      });
-      const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+      const canvas = await generateSlipCanvas();
+      if (!canvas) {
+        fallbackToClipboardCopy();
+        return;
+      }
+      
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
       
       if (Capacitor.isNativePlatform()) {
         try {
@@ -170,16 +235,16 @@ Receipt generated via Rent Flow.`;
           
           await Share.share({
             title: 'Payment Slip',
-            text: `Rent payment slip: ৳${amountPaid} paid by ${tenantName} for ${billingMonth} ${billingYear}.`,
+            text: `Rent payment receipt: ৳${amountPaid} paid by ${tenantName} for ${billingMonth} ${billingYear}.`,
             url: writeResult.uri,
             dialogTitle: 'Share Slip',
           });
         } catch (nativeError: any) {
           const errorMsg = nativeError.message?.toLowerCase() || '';
           if (errorMsg.includes('cancel') || errorMsg.includes('abort') || errorMsg.includes('dismiss')) {
-            console.log("Native sharing canceled by user.");
+            console.log("Sharing canceled.");
           } else {
-            console.warn("Native file sharing failed, falling back to clipboard copy", nativeError);
+            console.warn("File sharing failed, falling back to copy", nativeError);
             fallbackToClipboardCopy();
           }
         }
@@ -207,9 +272,9 @@ Receipt generated via Rent Flow.`;
           } catch (shareError: any) {
             const errorMsg = shareError.message?.toLowerCase() || '';
             if (shareError.name === 'AbortError' || errorMsg.includes('cancel') || errorMsg.includes('abort')) {
-              console.log("Web sharing canceled by user.");
+              console.log("Share canceled.");
             } else {
-              console.warn("Web file sharing failed, trying text sharing fallback...", shareError);
+              console.warn("File share failed, falling back to simple copy text...", shareError);
               try {
                 await navigator.share({
                   title: 'Rent Flow Payment Slip',
@@ -218,7 +283,7 @@ Receipt generated via Rent Flow.`;
               } catch (textShareError: any) {
                 const txtErrorMsg = textShareError.message?.toLowerCase() || '';
                 if (textShareError.name === 'AbortError' || txtErrorMsg.includes('cancel') || txtErrorMsg.includes('abort')) {
-                  console.log("Text sharing canceled by user.");
+                  console.log("Text share canceled.");
                 } else {
                   fallbackToClipboardCopy();
                 }
@@ -234,7 +299,7 @@ Receipt generated via Rent Flow.`;
           } catch (textError: any) {
             const txtErrorMsg = textError.message?.toLowerCase() || '';
             if (textError.name === 'AbortError' || txtErrorMsg.includes('cancel') || txtErrorMsg.includes('abort')) {
-              console.log("Text sharing canceled by user.");
+              console.log("Text share canceled.");
             } else {
               fallbackToClipboardCopy();
             }
@@ -244,45 +309,43 @@ Receipt generated via Rent Flow.`;
         fallbackToClipboardCopy();
       }
     } catch (error) {
-       console.warn("Error in share routine:", error);
+       console.warn("Share routine error:", error);
        fallbackToClipboardCopy();
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[100] flex flex-col items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-m3-surface rounded-3xl w-full max-w-sm max-h-full flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-black/60 z-[100] flex flex-col items-center justify-center p-2 sm:p-4 backdrop-blur-sm">
+      <div className="bg-m3-surface rounded-3xl w-full max-w-sm max-h-[90vh] sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Modal Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-m3-surface-variant/30">
-          <h2 className="text-lg font-extrabold tracking-tight text-m3-on-surface">Payment Slip</h2>
+        <div className="flex justify-between items-center px-6 py-4 border-b border-m3-surface-variant/20 shrink-0">
+          <h2 className="text-base font-extrabold tracking-tight text-m3-on-surface">Payment Slip</h2>
           <button onClick={onClose} className="p-1.5 text-m3-on-surface-variant hover:text-m3-on-surface hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
         
         {/* Scrollable Body container to support full visibility of height-restricted screens */}
-        <div 
-          className="p-5 bg-slate-100/95 dark:bg-zinc-950/70 overflow-y-auto flex justify-center w-full" 
-          style={{ maxHeight: 'calc(100vh - 200px)' }}
-        >
-          {/* Slip Render Area - Designed elegantly, avoiding clipping */}
-          <div ref={slipRef} id="slip-content" className="bg-white text-slate-800 w-full max-w-[325px] p-5 shadow-2xl border border-slate-100 flex flex-col relative shrink-0 rounded-2xl overflow-hidden font-sans">
-            {/* Top Color Bar accent */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-700 via-indigo-500 to-emerald-500 z-20" />
+        <div className="p-4 bg-slate-100/95 dark:bg-zinc-950/70 overflow-y-auto w-full flex-1">
+          <div className="flex items-center justify-center py-2 w-full min-h-min">
+            {/* Slip Render Area - Designed elegantly, avoiding clipping */}
+            <div ref={slipRef} id="slip-content" className="bg-white text-slate-800 w-full max-w-[325px] p-5 shadow-2xl border border-slate-100 flex flex-col relative shrink-0 rounded-2xl overflow-hidden font-sans">
+              {/* Top Color Bar accent */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-700 via-indigo-500 to-emerald-500 z-20" />
 
-            {/* Subtle Brand Watermark */}
-            <div className="absolute inset-0 opacity-[0.015] pointer-events-none flex items-center justify-center overflow-hidden select-none">
-              <div className="text-5xl font-black rotate-[-35deg] tracking-widest text-indigo-900">RENT FLOW</div>
-            </div>
+              {/* Subtle Brand Watermark */}
+              <div className="absolute inset-0 opacity-[0.015] pointer-events-none flex items-center justify-center overflow-hidden select-none">
+                <div className="text-5xl font-black rotate-[-35deg] tracking-widest text-indigo-900">RENT FLOW</div>
+              </div>
 
-            {/* Dynamic Status Seal Stamp */}
-            <div className={`absolute right-4 top-5 border rounded-lg px-2.5 py-1 text-[9px] font-black rotate-[-12deg] tracking-widest uppercase select-none shadow-sm flex items-center gap-1 z-10 ${
-              paymentStatus === 'CLEARED'
-                ? 'border-emerald-500 text-emerald-600 bg-emerald-50/90'
-                : 'border-amber-500 text-amber-600 bg-amber-50/90'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${paymentStatus === 'CLEARED' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              {paymentStatus}
+              {/* Dynamic Status Seal Stamp */}
+              <div className={`absolute right-4 top-5 border rounded-lg px-2.5 py-1 text-[9px] font-black rotate-[-12deg] tracking-widest uppercase select-none shadow-sm flex items-center gap-1 z-10 ${
+                paymentStatus === 'CLEARED'
+                  ? 'border-emerald-500 text-emerald-600 bg-emerald-50/90'
+                  : 'border-amber-500 text-amber-600 bg-amber-50/90'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${paymentStatus === 'CLEARED' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                {paymentStatus}
             </div>
 
             <div className="relative z-10 pt-1">
@@ -438,6 +501,7 @@ Receipt generated via Rent Flow.`;
             </div>
           </div>
         </div>
+      </div>
 
         {/* Action button triggers for PDF export and web sharing */}
         <div className="p-5 bg-m3-surface/90 backdrop-blur-md border-t border-m3-surface-variant/30 flex gap-3.5">
