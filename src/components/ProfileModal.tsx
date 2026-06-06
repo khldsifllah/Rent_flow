@@ -66,6 +66,11 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       console.error('Profile Update Error:', authUpdate.error);
       setMsg({ text: 'ত্রুটি ঘটেছে: ' + authUpdate.error.message, type: 'error' });
     } else {
+      try {
+        await supabase.from('users').upsert({ id: user.id, name: name.trim() });
+      } catch (dbErr) {
+        console.warn("Failed to update users table:", dbErr);
+      }
       setMsg({ text: '✅ প্রোফাইল সফলভাবে পরিবর্তন করা হয়েছে! (Profile updated successfully!)', type: 'success' });
       updateUserContext({ name: name.trim(), profile_picture: photo });
       setTimeout(() => {

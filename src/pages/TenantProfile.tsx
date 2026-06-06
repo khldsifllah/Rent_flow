@@ -46,17 +46,21 @@ export default function TenantProfile() {
     // Query landlord's real name from 'users' table
     let lName = user?.name || 'Owner';
     if (tenant.user_id) {
-      try {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('name')
-          .eq('id', tenant.user_id)
-          .single();
-        if (userData && userData.name) {
-          lName = userData.name;
+      if (user?.id && tenant.user_id === user.id) {
+        lName = user.name || 'Owner';
+      } else {
+        try {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('name')
+            .eq('id', tenant.user_id)
+            .single();
+          if (userData && userData.name) {
+            lName = userData.name;
+          }
+        } catch (err) {
+          console.warn("Failed to fetch landlord name from users table:", err);
         }
-      } catch (err) {
-        console.warn("Failed to fetch landlord name from users table:", err);
       }
     }
     setLandlordRealName(lName);

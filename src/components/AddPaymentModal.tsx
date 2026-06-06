@@ -243,7 +243,7 @@ export default function AddPaymentModal({ isOpen, onClose, onSuccess, preselecte
       slipGenerated = true;
 
       let landlordRealName = user?.name || 'Owner';
-      if (user?.id) {
+      if (!user?.name && user?.id) {
         try {
           const { data: userData } = await supabase
             .from('users')

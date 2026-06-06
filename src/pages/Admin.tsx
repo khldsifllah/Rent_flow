@@ -260,7 +260,7 @@ export default function Admin() {
       slipGenerated = true;
 
       let landlordRealName = user?.name || 'Owner';
-      if (user?.id) {
+      if (!user?.name && user?.id) {
         try {
           const { data: userData } = await supabase
             .from('users')
