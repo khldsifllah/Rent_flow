@@ -113,14 +113,14 @@ Thank you for using Rent Flow`;
     
     try {
       const renderedCanvas = await html2canvas(element, {
-        scale: 2, // High resolution fallback output
+        scale: 2.5, // Crisp high fidelity DPI representation
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
         removeContainer: true,
         foreignObjectRendering: false,
-        imageTimeout: 10000,
+        imageTimeout: 15000,
         scrollX: 0,
         scrollY: 0
       });
@@ -267,7 +267,7 @@ Thank you for using Rent Flow`;
         </div>
 
         {/* Compact Center Scrollless Wrapper */}
-        <div className="p-3 bg-neutral-50 flex-1 flex flex-col items-center justify-center overflow-visible">
+        <div className="p-4 bg-neutral-50 flex-1 flex flex-col items-center justify-center overflow-visible">
           
           {/* Capturable Redesigned Slip Area - Perfect inline style layout, white background, no external fonts/images */}
           <div 
@@ -277,87 +277,87 @@ Thank you for using Rent Flow`;
               backgroundColor: '#ffffff',
               color: '#000000',
               fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              width: '310px',
-              padding: '20px',
+              width: '290px',
+              padding: '24px 20px',
               boxSizing: 'border-box',
               display: 'flex',
               flexDirection: 'column',
-              borderRadius: '12px',
-              border: '1px solid #e1e8ed',
+              borderRadius: '8px',
+              border: '1.5px solid #000000',
               height: 'auto',
               overflow: 'visible',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)'
+              boxShadow: 'none'
             }}
           >
             
             {/* TOP HEADER */}
-            <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px solid #000000', paddingBottom: '10px' }}>
-              <div style={{ fontSize: '24px', fontWeight: '900', color: '#000000', letterSpacing: '-0.04em', lineHeight: '1', fontFamily: 'sans-serif' }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '2.5px double #000000', paddingBottom: '12px' }}>
+              <div style={{ fontSize: '26px', fontWeight: '900', color: '#000000', letterSpacing: '-0.05em', lineHeight: '1', fontFamily: 'sans-serif' }}>
                 Rent Flow
               </div>
-              <div style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', letterSpacing: '0.15em', marginTop: '4px', textTransform: 'uppercase', fontFamily: 'sans-serif' }}>
+              <div style={{ fontSize: '7.5px', fontWeight: '800', color: '#475569', letterSpacing: '0.18em', marginTop: '6px', textTransform: 'uppercase', fontFamily: 'sans-serif' }}>
                 OFFICIAL PAYMENT RECEIPT
               </div>
             </div>
 
             {/* MIDDLE INFO BOX ROWS */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
               
               {/* Slip Number */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', borderBottom: '1px dashed #e2e8f0' }}>
-                <span style={{ color: '#475569', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>SLIP NO:</span>
-                <span style={{ color: '#0f172a', fontSize: '12px', fontWeight: '800', fontFamily: 'monospace' }}>{displaySlipNumber}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
+                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>SLIP NO:</span>
+                <span style={{ color: '#000000', fontSize: '11.5px', fontWeight: '800', fontFamily: 'monospace' }}>{displaySlipNumber}</span>
               </div>
 
               {/* Date Paid */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', borderBottom: '1px dashed #e2e8f0' }}>
-                <span style={{ color: '#475569', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>DATE PAID:</span>
-                <span style={{ color: '#0f172a', fontSize: '11px', fontWeight: '700' }}>{formattedDatePaid}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
+                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>DATE PAID:</span>
+                <span style={{ color: '#000000', fontSize: '11px', fontWeight: '700' }}>{formattedDatePaid}</span>
               </div>
 
               {/* Landlord Name */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', borderBottom: '1px dashed #e2e8f0' }}>
-                <span style={{ color: '#475569', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>LANDLORD:</span>
-                <span style={{ color: '#0f172a', fontSize: '11px', fontWeight: '700', maxWidth: '180px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{landlordName}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
+                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>LANDLORD:</span>
+                <span style={{ color: '#000000', fontSize: '11px', fontWeight: '700', maxWidth: '160px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{landlordName}</span>
               </div>
 
               {/* Tenant Name */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', borderBottom: '1px dashed #e2e8f0' }}>
-                <span style={{ color: '#475569', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>TENANT:</span>
-                <span style={{ color: '#0f172a', fontSize: '11px', fontWeight: '700', maxWidth: '180px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tenantName}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
+                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>TENANT:</span>
+                <span style={{ color: '#000000', fontSize: '11px', fontWeight: '700', maxWidth: '160px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tenantName}</span>
               </div>
 
               {/* Flat or Shop Name */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', borderBottom: '1px dashed #e2e8f0' }}>
-                <span style={{ color: '#475569', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>FLAT/SHOP:</span>
-                <span style={{ color: '#0f172a', fontSize: '11px', fontWeight: '800', fontFamily: 'monospace' }}>{flatName}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
+                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>FLAT/SHOP:</span>
+                <span style={{ color: '#000000', fontSize: '11px', fontWeight: '800', fontFamily: 'monospace' }}>{flatName}</span>
               </div>
 
               {/* Month & Year */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', borderBottom: '1px dashed #e2e8f0' }}>
-                <span style={{ color: '#475569', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>MONTH:</span>
-                <span style={{ color: '#0f172a', fontSize: '11px', fontWeight: '700' }}>{periodText}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
+                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>MONTH:</span>
+                <span style={{ color: '#000000', fontSize: '11px', fontWeight: '700' }}>{periodText}</span>
               </div>
 
               {/* Amount Cleared */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', borderBottom: '1px dashed #e2e8f0' }}>
-                <span style={{ color: '#475569', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>AMOUNT:</span>
-                <span style={{ color: '#0f172a', fontSize: '14px', fontWeight: '900', fontFamily: 'sans-serif' }}>৳{amountPaid.toLocaleString('en-BD')}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: '6px', borderBottom: '1.2px dashed #000000' }}>
+                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>AMOUNT:</span>
+                <span style={{ color: '#000000', fontSize: '13.5px', fontWeight: '900', fontFamily: 'sans-serif' }}>৳{amountPaid.toLocaleString('en-BD')}</span>
               </div>
 
               {/* Status CLEARED Green Badge */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px' }}>
-                <span style={{ color: '#475569', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>STATUS:</span>
+                <span style={{ color: '#475569', fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>STATUS:</span>
                 <div style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  backgroundColor: '#ecfdf5',
-                  color: '#047857',
-                  border: '1px solid #10b981',
-                  borderRadius: '4px',
-                  padding: '2px 8px',
-                  fontSize: '11px',
-                  fontWeight: '800',
+                  backgroundColor: '#ffffff',
+                  color: '#10b981',
+                  border: '1.5px solid #10b981',
+                  borderRadius: '3px',
+                  padding: '1.5px 6px',
+                  fontSize: '10.5px',
+                  fontWeight: '900',
                   letterSpacing: '0.05em'
                 }}>
                   CLEARED
@@ -369,13 +369,13 @@ Thank you for using Rent Flow`;
             {/* BOTTOM THANK YOU FOOTER TEXT */}
             <div style={{ 
               textAlign: 'center', 
-              fontSize: '9px', 
-              color: '#64748b', 
-              marginTop: '18px', 
-              fontWeight: '600', 
-              borderTop: '1px solid #e2e8f0', 
+              fontSize: '9.5px', 
+              color: '#475569', 
+              marginTop: '22px', 
+              fontWeight: '700', 
+              borderTop: '2px solid #000000', 
               paddingTop: '10px',
-              fontStyle: 'italic'
+              fontStyle: 'normal'
             }}>
               Thank you for using Rent Flow
             </div>
@@ -398,7 +398,7 @@ Thank you for using Rent Flow`;
           <button 
             onClick={handleShare} 
             disabled={isPreparing}
-            className="flex-1 flex justify-center items-center gap-1.5 bg-slate-200 hover:bg-slate-350 text-slate-800 font-bold rounded-xl py-2.5 px-3 active:scale-[0.98] transition-all disabled:opacity-50 text-[12.5px]"
+            className="flex-1 flex justify-center items-center gap-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl py-2.5 px-3 active:scale-[0.98] transition-all disabled:opacity-50 text-[12.5px]"
           >
             <Share2 className="w-4 h-4 text-slate-700" /> 
             <span>Share Slip</span>
